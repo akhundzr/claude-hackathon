@@ -16,33 +16,37 @@ from .report_html import generate as generate_html
 
 def main() -> None:
     args = parse_args()
-    directory = os.path.abspath(args.directory)
+    directories = [os.path.abspath(d) for d in args.directories]
+    directory = os.path.commonpath(directories) if len(directories) > 1 else directories[0]
 
     start = time.time()
-    file_paths, skipped = walk(directory)
-
     file_results: list[dict] = []
     smell_findings: list[dict] = []
     security_findings: list[dict] = []
+    skipped = 0
 
-    for filepath in file_paths:
-        language = detect_language(filepath)
-        metrics = analyze_file(filepath, language)
-        if metrics is None:
-            skipped += 1
-            continue
+    for d in directories:
+        dir_paths, dir_skipped = walk(d)
+        skipped += dir_skipped
 
-        smells = detect_smells(filepath, language)
-        security = scan_security(filepath, language)
+        for filepath in dir_paths:
+            language = detect_language(filepath)
+            metrics = analyze_file(filepath, language)
+            if metrics is None:
+                skipped += 1
+                continue
 
-        smell_findings.extend(smells)
-        security_findings.extend(security)
+            smells = detect_smells(filepath, language)
+            security = scan_security(filepath, language)
 
-        file_results.append({
-            **metrics,
-            'smells': len(smells),
-            'security_issues': len(security),
-        })
+            smell_findings.extend(smells)
+            security_findings.extend(security)
+
+            file_results.append({
+                **metrics,
+                'smells': len(smells),
+                'security_issues': len(security),
+            })
 
     duration_ms = int((time.time() - start) * 1000)
 

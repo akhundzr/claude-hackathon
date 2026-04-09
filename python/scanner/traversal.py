@@ -3,7 +3,7 @@ import sys
 from .constants import IGNORE_DIRS
 
 
-def walk(root: str) -> tuple[list[str], int]:
+def walk(root: str, no_ignore: bool = False) -> tuple[list[str], int]:
     """Return (list of file paths, skipped_count) for the given root directory."""
     files: list[str] = []
     skipped = [0]
@@ -19,7 +19,7 @@ def walk(root: str) -> tuple[list[str], int]:
 
         subdirs: list[str] = []
         for entry in entries:
-            if entry.name in IGNORE_DIRS:
+            if not no_ignore and entry.name in IGNORE_DIRS:
                 continue
             if entry.is_symlink():
                 continue
