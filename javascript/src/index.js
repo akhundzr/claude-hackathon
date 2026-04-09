@@ -10,36 +10,49 @@ import { aggregate } from './aggregator.js';
 import { output as outputJson } from './reportJson.js';
 import { generate as generateHtml } from './reportHtml.js';
 
+function commonPath(dirs) {
+  if (dirs.length === 1) return dirs[0];
+  const parts = dirs.map(d => d.split('/'));
+  const min = Math.min(...parts.map(p => p.length));
+  let i = 0;
+  while (i < min && parts.every(p => p[i] === parts[0][i])) i++;
+  return parts[0].slice(0, i).join('/') || '/';
+}
+
 async function main() {
-  const { directory, output, noOpen } = parseArgs();
+  const { directories, output, noOpen, noIgnore } = parseArgs();
 
   const start = Date.now();
-  const { files, skipped: initialSkipped } = walk(directory);
-
   const fileResults = [];
   const smellFindings = [];
   const securityFindings = [];
-  let skipped = initialSkipped;
+  let skipped = 0;
 
-  for (const filepath of files) {
-    const language = detectLanguage(filepath);
-    const metrics = analyzeFile(filepath, language);
-    if (!metrics) { skipped++; continue; }
+  for (const directory of directories) {
+    const { files, skipped: dirSkipped } = walk(directory, { noIgnore });
+    skipped += dirSkipped;
 
-    const smells = detectSmells(filepath, language);
-    const security = scanSecurity(filepath, language);
+    for (const filepath of files) {
+      const language = detectLanguage(filepath);
+      const metrics = analyzeFile(filepath, language);
+      if (!metrics) { skipped++; continue; }
 
-    smellFindings.push(...smells);
-    securityFindings.push(...security);
+      const smells = detectSmells(filepath, language);
+      const security = scanSecurity(filepath, language);
 
-    fileResults.push({
-      ...metrics,
-      smells: smells.length,
-      security_issues: security.length,
-    });
+      smellFindings.push(...smells);
+      securityFindings.push(...security);
+
+      fileResults.push({
+        ...metrics,
+        smells: smells.length,
+        security_issues: security.length,
+      });
+    }
   }
 
   const durationMs = Date.now() - start;
+  const directory = commonPath(directories);
 
   const report = aggregate({
     directory,

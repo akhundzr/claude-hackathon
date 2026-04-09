@@ -2,7 +2,7 @@ import { readdirSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { IGNORE_DIRS } from './constants.js';
 
-export function walk(root) {
+export function walk(root, { noIgnore = false } = {}) {
   const files = [];
   let skipped = 0;
 
@@ -17,7 +17,7 @@ export function walk(root) {
     }
 
     for (const entry of entries) {
-      if (IGNORE_DIRS.has(entry.name)) continue;
+      if (!noIgnore && IGNORE_DIRS.has(entry.name)) continue;
       if (entry.isSymbolicLink()) continue;
 
       const fullPath = join(dirPath, entry.name);

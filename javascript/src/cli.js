@@ -10,18 +10,20 @@ export function parseArgs() {
     .description('Code Scanner — instant codebase health assessment');
 
   program
-    .command('scan <directory>')
-    .description('Scan a directory for code quality metrics')
+    .command('scan <directories...>')
+    .description('Scan one or more directories for code quality metrics')
     .option('--output <path>', 'Output path for HTML report', './report.html')
     .option('--no-open', 'Suppress automatic browser opening')
-    .action((directory, options, cmd) => {
-      const absDir = resolve(directory);
-      if (!existsSync(absDir) || !statSync(absDir).isDirectory()) {
-        process.stderr.write(`Error: '${directory}' is not a valid directory\n`);
-        process.exit(1);
+    .option('--no-ignore', 'Do not skip any directories (node_modules, .git, etc.)')
+    .action((directories, options) => {
+      const absDirs = directories.map(d => resolve(d));
+      for (const absDir of absDirs) {
+        if (!existsSync(absDir) || !statSync(absDir).isDirectory()) {
+          process.stderr.write(`Error: '${absDir}' is not a valid directory\n`);
+          process.exit(1);
+        }
       }
-      // Store parsed result on program for retrieval
-      program._scanArgs = { directory: absDir, output: options.output, noOpen: !options.open };
+      program._scanArgs = { directories: absDirs, output: options.output, noOpen: !options.open, noIgnore: !options.ignore };
     });
 
   program.parse(process.argv);
