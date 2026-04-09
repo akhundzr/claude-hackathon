@@ -51,10 +51,23 @@ export async function runRefactor(directory, {
     return;
   }
 
-  const targets     = rankFindings(baseReport.code_smells.findings).slice(0, top);
-  const results     = [];
-  let   skipAll     = false;
+  const targets      = rankFindings(baseReport.code_smells.findings).slice(0, top);
+  const results      = [];
+  let   skipAll      = false;
   let   currentScore = baselineScore;
+
+  // Track every file we touch so we can restore all of them at the end.
+  // Keys are absolute paths; values are the content before any modification.
+  const modifiedFiles = new Map();
+
+  const restoreAll = () => {
+    for (const [path, content] of modifiedFiles) {
+      try { writeFileSync(path, content, 'utf8'); } catch {}
+    }
+  };
+
+  // Restore on Ctrl-C so interrupted sessions never leave dirty files
+  process.once('SIGINT', () => { restoreAll(); process.exit(130); });
 
   for (const finding of targets) {
     if (skipAll) break;
@@ -74,6 +87,9 @@ export async function runRefactor(directory, {
       process.stdout.write(`${RED}Cannot read file — skipping${RESET}\n`);
       continue;
     }
+
+    // Register original content before any writes for this file
+    if (!modifiedFiles.has(absPath)) modifiedFiles.set(absPath, originalContent);
 
     let succeeded = false;
 
@@ -172,4 +188,10 @@ export async function runRefactor(directory, {
     `(${deltaColor}${deltaStr}${RESET})  ` +
     `Grade: ${baselineGrade} → ${finalReport.quality.grade}\n\n`
   );
+
+  // Always restore every file we touched — changes are for analysis only, never committed
+  if (modifiedFiles.size > 0) {
+    restoreAll();
+    process.stdout.write(`${DIM}All ${modifiedFiles.size} modified file(s) restored to original.${RESET}\n\n`);
+  }
 }
