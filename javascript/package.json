@@ -1,0 +1,15 @@
+{
+  "name": "scanner",
+  "version": "0.1.0",
+  "description": "CLI code scanner with quality metrics, smell detection, and security scanning",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "open": "^10.0.0"
+  }
+}
