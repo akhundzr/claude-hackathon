@@ -167,19 +167,28 @@ After all refactoring is complete, display a summary table:
 3. Collect all smell findings, sort by severity (error first) then value (descending)
 4. Take top N findings
 5. Record baseline quality score
-6. For each finding:
+6. For each finding (max 2 retries per function):
    a. Extract function body + context via extractor.js
    b. Build prompt via prompt.js
+      - On retry: append "Previous attempt did not improve the score.
+        The issue was: {{smell}}. Try a different approach." to the user prompt.
    c. Call Claude API via claude.js
    d. Parse refactored code from response
    e. Generate and display diff via diff.js
    f. If not --auto, prompt user for approval
    g. If approved and not --dry-run, write refactored code to file
    h. Re-scan the modified file, record new score
-   i. Print per-function delta
+   i. If score did not improve (same or worse):
+        - Restore original file content
+        - If attempts < 3: increment attempt counter, go back to step (a)
+        - If attempts == 3: print warning "Could not improve [function] after 3 attempts — skipping"
+                           and continue to next finding
+   j. Print per-function delta
 7. Run full scan on dir → get final report
 8. Print summary table with overall quality delta
 ```
+
+**Exit condition:** Each function gets at most 3 attempts (1 initial + 2 retries). If no attempt improves the score, the original file is restored and the loop moves on. This prevents infinite iteration on genuinely hard cases and keeps the demo from stalling.
 
 ---
 
@@ -348,27 +357,37 @@ Run `/insights` after the implementation phase is complete. Expected findings to
 
 ## 6. Demo Script (10 minutes)
 
-**Pre-demo:** Ensure `ANTHROPIC_API_KEY` is set. Have the project open in a terminal. Dirty fixture ready.
+**Real codebase:** `ma-ds-ody-remediation-lambda` — Python AWS Lambda functions at
+`/Users/akhundzr/Library/CloudStorage/OneDrive-moodys.com/Documents/GitHub/ma-ds-ody-remediation-lambda/`
 
-**0–1 min: Context**
+**Pre-demo setup:**
+- Ensure `ANTHROPIC_API_KEY` is set in the environment.
+- Run a dry-run scan beforehand to confirm there are smell findings to demo.
+- Have the project open in a terminal, `cd` to the JS scanner directory.
+- Do NOT commit any refactoring changes to `ma-ds-ody-remediation-lambda` — use `--dry-run` or manually revert after the demo.
+
+**0–1 min: Context — show the scanner on real code**
 ```bash
-node src/index.js scan tests/fixtures/ --no-open
+REPO=/Users/akhundzr/Library/CloudStorage/OneDrive-moodys.com/Documents/GitHub/ma-ds-ody-remediation-lambda
+node src/index.js scan $REPO --no-open
 ```
-Show JSON output. Point out quality score, smell findings, security findings.
+Show JSON output. Point out quality score, smell findings on real Lambda functions. "This is production code, not synthetic test data."
 
 **1–4 min: Refactoring Assistant Live**
 ```bash
-node src/index.js refactor tests/fixtures/ --top 2
+node src/index.js refactor $REPO --top 2
 ```
-Walk through: scanner identifies worst 2 functions → Claude suggests refactors → colorized diff appears → type `y` → file updated → score delta shown. Watch score climb.
+Walk through: scanner identifies worst 2 functions from the real codebase → Claude suggests refactors → colorized diff appears in terminal → type `y` → file updated → score delta shown. Watch score climb on real code.
+
+If a refactoring doesn't improve the score, the retry loop kicks in — point this out: "It didn't improve the score, so it tries again with a different angle."
 
 **4–5 min: Key Decisions**
-- One function at a time → cumulative score improvement is demoable
-- Line-range replacement → deterministic, no string-matching fragility
-- Constrained Claude response format → reliable parsing
+- One function at a time → cumulative score improvement is visible
+- Retry loop with exit condition → the agent doesn't get stuck; gives up after 3 attempts
+- Constrained Claude response format → reliable diff parsing on real code
 
 **5–7 min: PostToolUse Hook**
-Start a Claude Code session. Edit a file to introduce a smell. Hook fires:
+Start a Claude Code session on the scanner project itself. Edit a `src/` file to introduce a smell. Hook fires:
 ```
 ⚠ Quality: 78 → 74 (-4) [C]
 ```
@@ -376,19 +395,20 @@ Fix it. Hook fires again:
 ```
 ✓ Quality: 74 → 78 (+4) [C]
 ```
-"No prompting. The feedback loop is automatic."
+"No prompting. Every file write triggers a quality check automatically."
 
 **7–9 min: Fresh Session Test**
-New terminal. Only `CLAUDE.md` and `.claude/commands/scan-refactor.md` loaded.
+New terminal, new Claude Code session. Only `CLAUDE.md` and `.claude/commands/scan-refactor.md` loaded. Point the command at the real repo:
 ```
-/scan-refactor tests/fixtures/
+/scan-refactor /Users/.../ma-ds-ody-remediation-lambda
 ```
-Agent follows the encoded workflow without any additional guidance. "It works because the workflow is encoded — not because I explained it."
+Agent follows the encoded workflow without any additional guidance. "It knows how to do this because the workflow is encoded — not because I explained it in this session."
 
 **9–10 min: What You Learned**
 1. Scanner-as-signal converges — the agent optimizes a number, not style preferences.
-2. Hooks close the loop — quality is always visible, no manual re-scanning.
-3. Encoding level matters — refactoring workflow = command; quality conventions = rules.
+2. Retry loop matters — without an exit condition, the feedback loop can stall; 3-attempt cap keeps it moving.
+3. Real code tells a better story — running on production Lambda functions is more credible than fixtures.
+4. Encoding level matters — refactoring workflow = command; quality conventions = rules.
 
 ---
 
