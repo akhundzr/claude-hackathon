@@ -40,8 +40,12 @@ async function main() {
   writeFileSync(outputPath, html, 'utf8');
 
   if (!noOpen) {
+    const { serveReport } = await import('./serve.js');
     const { default: open } = await import('open');
-    await open(`file://${outputPath}`);
+    const { url, server } = await serveReport(outputPath);
+    await open(url);
+    process.stderr.write(`\nReport served at ${url}\nPress Ctrl+C to stop.\n`);
+    process.on('SIGINT', () => { server.close(); process.exit(0); });
   }
 }
 
