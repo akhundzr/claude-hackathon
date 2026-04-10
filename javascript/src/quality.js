@@ -5,7 +5,7 @@ export function compute({
   totalFiles, smellWarnings, smellErrors, secretCount, dangerousCallCount,
 }) {
   const codeSmellScore    = computeCodeSmellScore(totalFunctions, smellWarnings, smellErrors);
-  const securityScore     = computeSecurityScore(secretCount, dangerousCallCount);
+  const securityScore     = computeSecurityScore(secretCount, dangerousCallCount, totalFiles);
   const commentScore      = computeCommentScore(totalLoc, totalCommentLines);
   const maintScore        = computeMaintainabilityScore(totalFunctions, totalFunctionLines, totalFiles, totalLoc);
 
@@ -33,8 +33,16 @@ function computeCodeSmellScore(totalFunctions, warnings, errors) {
   return Math.max(0, 100 - density * 50);
 }
 
-function computeSecurityScore(secretCount, dangerousCallCount) {
-  return Math.max(0, 100 - secretCount * 20 - dangerousCallCount * 10);
+function computeSecurityScore(secretCount, dangerousCallCount, totalFiles) {
+  // Secrets are always high-severity: each one costs 20 points
+  const secretPenalty = Math.min(secretCount * 20, 60);
+
+  // Dangerous calls use density (per file) so large repos aren't unfairly penalised
+  // 0 → 0, 1/file → ~40 pts, 3+/file → ~60 pts (asymptotic cap)
+  const density = dangerousCallCount / Math.max(totalFiles, 1);
+  const dangerPenalty = Math.round((1 - Math.exp(-density * 0.8)) * 60);
+
+  return Math.max(0, 100 - secretPenalty - dangerPenalty);
 }
 
 function computeCommentScore(totalLoc, totalCommentLines) {

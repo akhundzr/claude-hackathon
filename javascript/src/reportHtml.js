@@ -455,42 +455,81 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
     histSec.appendChild(tw);
   }
 
-  // Feedback loops
+  // Feedback loops — grouped by Lambda file
   var loopsSec=document.getElementById('loops-section');
   if(!loops.length){
     loopsSec.innerHTML='<div class="empty-state">No refactoring sessions recorded. Run scanner refactor to populate this section.</div>';
   }else{
+    // Group loops by file
+    var byFile={};
     loops.forEach(function(loop){
-      var atts=loop.attempts||[];
-      var outcomeMap={'improved':'\u2713 improved','failed':'\u2717 failed','dry_run':'\u25b6 dry run','skipped':'skipped'};
-      var outcomeLabel=outcomeMap[loop.finalOutcome]||loop.finalOutcome||'unknown';
-      var outcomeColor={'improved':'var(--green)','failed':'var(--red)','dry_run':'var(--blue)','skipped':'var(--muted)'}[loop.finalOutcome]||'var(--muted)';
-      var id=uid();
-      var item=document.createElement('div');item.className='loop-item';
-      item.innerHTML='<div class="loop-hdr" onclick="_tog(this)">'
-        +'<span class="loop-fn" title="'+esc(loop.file||'')+'">'+esc(loop.functionName||'?')
-        +'<span style="color:var(--muted);font-weight:400;font-family:sans-serif;font-size:.72rem"> in '+esc(loop.file||'')+'</span></span>'
-        +'<span class="badge bi" style="margin-right:.3rem">'+esc(loop.smellType||'')+'</span>'
-        +'<span style="font-size:.73rem;color:var(--muted)">'+atts.length+' attempt'+(atts.length!==1?'s':'')+'</span>&nbsp;'
-        +'<span style="font-size:.78rem;font-weight:600;color:'+outcomeColor+'">'+outcomeLabel+'</span>'
+      var f=loop.file||'unknown';
+      if(!byFile[f])byFile[f]=[];
+      byFile[f].push(loop);
+    });
+
+    Object.keys(byFile).sort().forEach(function(fname){
+      var filLoops=byFile[fname];
+      var improved=filLoops.filter(function(l){return l.finalOutcome==='improved'}).length;
+      var failed=filLoops.filter(function(l){return l.finalOutcome==='failed'}).length;
+      var skipped=filLoops.filter(function(l){return l.finalOutcome==='skipped'||l.finalOutcome==='dry_run'}).length;
+      var totalAtts=filLoops.reduce(function(s,l){return s+(l.attempts||[]).length},0);
+
+      // File-level header badges
+      var badges='';
+      if(improved)badges+='<span class="badge bg">'+improved+' improved</span> ';
+      if(failed)badges+='<span class="badge be">'+failed+' failed</span> ';
+      if(skipped)badges+='<span class="badge bi">'+skipped+' skipped</span> ';
+
+      var nm=fname.split('/').pop();
+      var fileItem=document.createElement('div');
+      fileItem.className='loop-item';
+      fileItem.innerHTML='<div class="loop-hdr" onclick="_tog(this)">'
+        +icon_file()
+        +'<span class="loop-fn" title="'+esc(fname)+'">'+esc(nm)
+        +'<span style="color:var(--muted);font-weight:400;font-family:sans-serif;font-size:.72rem"> '+esc(fname)+'</span></span>'
+        +badges
+        +'<span style="font-size:.72rem;color:var(--muted)">'+filLoops.length+' function'+(filLoops.length!==1?'s':'')+', '+totalAtts+' loop'+(totalAtts!==1?'s':'')+'</span>'
         +icon_chev()+'</div>'
-        +'<div class="loop-body" id="'+id+'"></div>';
-      var body=item.querySelector('.loop-body');
-      if(atts.length){
-        atts.forEach(function(a){
-          var delta=a.scoreAfter-a.scoreBefore;
-          var dstr=delta>0?'<span style="color:var(--green)">+'+delta+'</span>':delta<0?'<span style="color:var(--red)">'+delta+'</span>':'<span style="color:var(--muted)">0</span>';
-          body.innerHTML+='<div class="loop-att"><span style="color:var(--muted);width:68px;flex-shrink:0;font-size:.77rem">Attempt '+a.attempt+'</span>'
-            +'<span style="color:var(--dim)">'+a.scoreBefore+' \u2192 '+a.scoreAfter+'</span>'
-            +'<span>('+dstr+')</span>'
-            +(a.applied?'<span style="color:var(--green);font-size:.76rem">applied</span>':'<span style="color:var(--muted);font-size:.76rem">not applied</span>')
-            +(a.improved?'<span style="color:var(--green);font-size:.76rem">\u2191 improved</span>':'<span style="color:var(--muted);font-size:.76rem">no change</span>')
-            +'</div>';
-        });
-      }else{
-        body.innerHTML='<div style="padding:.4rem .9rem;color:var(--muted);font-size:.79rem">No attempt details.</div>';
-      }
-      loopsSec.appendChild(item);
+        +'<div class="loop-body"></div>';
+
+      var fileBody=fileItem.querySelector('.loop-body');
+
+      filLoops.forEach(function(loop){
+        var atts=loop.attempts||[];
+        var outcomeColor={'improved':'var(--green)','failed':'var(--red)','dry_run':'var(--blue)','skipped':'var(--muted)'}[loop.finalOutcome]||'var(--muted)';
+        var outcomeIcon={'improved':'\u2713','failed':'\u2717','dry_run':'\u25b6','skipped':'\u2012'}[loop.finalOutcome]||'?';
+        var successfulAtts=atts.filter(function(a){return a.improved}).length;
+
+        var fnRow=document.createElement('div');
+        fnRow.style.cssText='padding:.5rem .9rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;font-size:.8rem';
+        fnRow.innerHTML='<span style="font-family:monospace;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(loop.functionName||'?')+'</span>'
+          +'<span class="badge bi">'+esc(loop.smellType||'')+'</span>'
+          +(atts.length?'<span style="color:var(--muted);font-size:.75rem">'+atts.length+' loop'+(atts.length!==1?'s':'')+(successfulAtts?' ('+successfulAtts+' improved)':'')+'</span>':'')
+          +'<span style="font-weight:700;color:'+outcomeColor+'">'+outcomeIcon+' '+esc(loop.finalOutcome||'')+'</span>';
+
+        // Per-attempt detail rows
+        if(atts.length){
+          atts.forEach(function(a){
+            var delta=a.scoreAfter-a.scoreBefore;
+            var dstr=delta>0?'<span style="color:var(--green)">+'+delta+'</span>':delta<0?'<span style="color:var(--red)">'+delta+'</span>':'<span style="color:var(--muted)">+0</span>';
+            var attRow=document.createElement('div');
+            attRow.className='loop-att';
+            attRow.style.paddingLeft='1.8rem';
+            attRow.innerHTML='<span style="color:var(--muted);width:60px;flex-shrink:0;font-size:.75rem">Loop '+a.attempt+'</span>'
+              +'<span style="color:var(--dim);font-size:.78rem">'+a.scoreBefore+' \u2192 '+a.scoreAfter+'</span>'
+              +'<span style="font-size:.78rem">('+dstr+')</span>'
+              +(a.improved
+                ?'<span style="color:var(--green);font-size:.75rem">\u2191 score improved</span>'
+                :'<span style="color:var(--muted);font-size:.75rem">no improvement</span>');
+            fnRow.appendChild(attRow);
+          });
+        }
+
+        fileBody.appendChild(fnRow);
+      });
+
+      loopsSec.appendChild(fileItem);
     });
   }
 })();

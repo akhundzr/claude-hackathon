@@ -3,7 +3,7 @@ export const IGNORE_DIRS = new Set([
 ]);
 
 export const EXTENSION_MAP = {
-  '.py': 'Python', '.js': 'JavaScript', '.ts': 'TypeScript',
+  '.py': 'Python', '.js': 'JavaScript', '.mjs': 'JavaScript', '.cjs': 'JavaScript', '.ts': 'TypeScript',
   '.jsx': 'JSX', '.tsx': 'TSX', '.java': 'Java',
   '.c': 'C', '.cpp': 'C++', '.cc': 'C++', '.cxx': 'C++',
   '.h': 'C/C++ Header', '.hpp': 'C/C++ Header',
