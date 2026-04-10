@@ -7,6 +7,7 @@ import { output as outputJson } from './reportJson.js';
 import { generate as generateHtml } from './reportHtml.js';
 import { generateFixes } from './fixer.js';
 import { loadFeedbackLoops } from './scanHistory.js';
+import { classifyUnknownFiles } from './classifier.js';
 
 async function main() {
   const args = parseArgs();
@@ -31,7 +32,17 @@ async function main() {
   const fixes         = generateFixes(report.security.findings);
   const feedbackLoops = loadFeedbackLoops(directory);
 
-  const html = generateHtml(report, { fixes, feedbackLoops });
+  // AI-classify any files the scanner couldn't identify
+  const unknownFiles = report.files
+    .filter(f => f.language === 'unknown')
+    .map(f => ({ relPath: f.path, absPath: resolve(directory, f.path) }));
+
+  if (unknownFiles.length) {
+    process.stderr.write(`Classifying ${unknownFiles.length} unrecognized file(s) with AI...\n`);
+  }
+  const aiGuesses = await classifyUnknownFiles(unknownFiles, directory);
+
+  const html = generateHtml(report, { fixes, feedbackLoops, aiGuesses });
   const outputPath = resolve(output);
   writeFileSync(outputPath, html, 'utf8');
 

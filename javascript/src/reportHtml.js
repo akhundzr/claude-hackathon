@@ -311,6 +311,7 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
 const R=__REPORT_JSON__;
 const FIXES=__FIXES_JSON__;
 const LOOPS=__LOOPS_JSON__;
+const AIGUESSES=__AIGUESSES_JSON__;
 var COLORS=['#667eea','#3fb950','#f85149','#d29922','#bc8cff','#56d364','#f0883e','#58a6ff','#e94560','#39c5cf'];
 
 (function(){var s=localStorage.getItem('cs-theme')||'dark';document.documentElement.dataset.theme=s;document.getElementById('tbtn').addEventListener('click',function(){var t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;localStorage.setItem('cs-theme',t)})})();
@@ -621,29 +622,56 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
     document.getElementById('s-unknown').style.display='none';
     return;
   }
-  el.innerHTML='<div style="font-size:.78rem;color:var(--muted);margin-bottom:.85rem">These files have no recognized extension or filename. They are included in file counts but skipped for metrics, smell detection, and security scanning.</div>';
-  var byExt={};
+
+  var guesses=AIGUESSES||{};
+  var hasGuesses=Object.keys(guesses).length>0;
+
+  var intro='<div style="font-size:.78rem;color:var(--muted);margin-bottom:.85rem">'
+    +'These files have no recognized extension or filename. They are included in file counts but skipped for metrics, smell detection, and security scanning.';
+  if(hasGuesses){
+    intro+=' <span style="color:var(--purple)">&#129302; AI has made educated guesses about their type — shown below.</span>';
+  } else if(window.__noApiKey){
+    intro+=' Set <code style="font-size:.77rem;background:var(--accent);padding:.1rem .3rem;border-radius:3px">ANTHROPIC_API_KEY</code> to enable AI classification.';
+  }
+  intro+='</div>';
+  el.innerHTML=intro;
+
+  // Group by AI-guessed type if available, else by extension
+  var byGroup={};
   unknown.forEach(function(f){
-    var ext=f.path.includes('.')?'.'+f.path.split('.').pop():'(no extension)';
-    if(!byExt[ext])byExt[ext]=[];
-    byExt[ext].push(f);
+    var group=guesses[f.path]||guesses[f.path.split('/').pop()]||null;
+    var key=group?'AI: '+group:(f.path.includes('.')?'.'+f.path.split('.').pop():'(no extension)');
+    if(!byGroup[key])byGroup[key]={isAi:!!group,guess:group,files:[]};
+    byGroup[key].files.push(f);
   });
-  Object.keys(byExt).sort().forEach(function(ext){
-    var files=byExt[ext];
-    var id=uid();
-    var grp=document.createElement('div');grp.className='fg';
-    grp.innerHTML='<div class="fg-hdr" onclick="_tog(this)">'+icon_file()
-      +'<span class="fg-fname">'+esc(ext)+'</span>'
-      +'<span style="font-size:.72rem;color:var(--muted)">'+files.length+' file'+(files.length!==1?'s':'')+'</span>'
+
+  Object.keys(byGroup).sort(function(a,b){
+    // AI-guessed groups first
+    if(byGroup[a].isAi!==byGroup[b].isAi)return byGroup[a].isAi?-1:1;
+    return a.localeCompare(b);
+  }).forEach(function(key){
+    var grp=byGroup[key];
+    var grpEl=document.createElement('div');grpEl.className='fg';
+
+    var badge=grp.isAi
+      ?'<span style="display:inline-flex;align-items:center;gap:.25rem;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--purple);border-radius:8px;padding:.1rem .45rem;font-size:.7rem;font-weight:600;margin-right:.3rem">&#129302; AI guess</span>'
+      :'';
+    var label=grp.isAi?esc(grp.guess):esc(key);
+
+    grpEl.innerHTML='<div class="fg-hdr" onclick="_tog(this)">'+icon_file()
+      +'<span class="fg-fname">'+badge+label+'</span>'
+      +(grp.isAi?'<span style="font-size:.7rem;color:var(--muted);font-style:italic;margin-right:.4rem">estimated</span>':'')
+      +'<span style="font-size:.72rem;color:var(--muted)">'+grp.files.length+' file'+(grp.files.length!==1?'s':'')+'</span>'
       +icon_chev()+'</div><div class="fg-body"></div>';
-    var body=grp.querySelector('.fg-body');
-    files.forEach(function(f){
+
+    var body=grpEl.querySelector('.fg-body');
+    grp.files.forEach(function(f){
       var row=document.createElement('div');
       row.style.cssText='padding:.35rem .9rem;border-bottom:1px solid var(--border);font-family:monospace;font-size:.77rem;color:var(--dim)';
       row.textContent=f.path;
       body.appendChild(row);
     });
-    el.appendChild(grp);
+    el.appendChild(grpEl);
   });
 })();
 
@@ -682,10 +710,11 @@ document.getElementById('ftxt').textContent='Code Scanner \u2022 '+R.scan_metada
 </body>
 </html>`;
 
-export function generate(report, { fixes = null, feedbackLoops = [] } = {}) {
+export function generate(report, { fixes = null, feedbackLoops = [], aiGuesses = {} } = {}) {
   const safe = v => JSON.stringify(v).replace(/<\//g, '<\\/');
   return HTML_TEMPLATE
-    .replace('__REPORT_JSON__', safe(report))
-    .replace('__FIXES_JSON__',  safe(fixes || {}))
-    .replace('__LOOPS_JSON__',  safe(feedbackLoops));
+    .replace('__REPORT_JSON__',    safe(report))
+    .replace('__FIXES_JSON__',     safe(fixes || {}))
+    .replace('__LOOPS_JSON__',     safe(feedbackLoops))
+    .replace('__AIGUESSES_JSON__', safe(aiGuesses));
 }
