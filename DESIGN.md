@@ -251,32 +251,50 @@ Each finding records: `type`, `severity`, `file`, `line`, `function_name`, `deta
 
 #### Hardcoded Secrets
 
-| Pattern Name | Regex |
-|---|---|
-| AWS Access Key | `(?i)(aws_access_key_id\|aws_secret_access_key)\s*[=:]\s*['"]?[A-Za-z0-9/+=]{20,}` |
-| API Key Assignment | `(?i)(api[_-]?key\|apikey\|api[_-]?secret)\s*[=:]\s*['"]?[A-Za-z0-9_\-]{16,}` |
-| Password Assignment | `(?i)(password\|passwd\|pwd)\s*[=:]\s*['"][^'"]{4,}['"]` |
-| Private Key | `-----BEGIN (RSA\|DSA\|EC\|OPENSSH)? ?PRIVATE KEY-----` |
-| Generic Token | `(?i)(token\|secret\|auth[_-]?key)\s*[=:]\s*['"]?[A-Za-z0-9_\-]{16,}` |
-| Connection String | `(?i)(mongodb\+srv\|postgres\|mysql\|redis):\/\/[^\s'"]+` |
-
-#### Dangerous Function Calls
-
-| Pattern | Language(s) | Risk |
+| Pattern Name | Coverage | Standard |
 |---|---|---|
-| `eval()` | Python, JS | Arbitrary code execution |
-| `exec()` | Python | Arbitrary code execution |
-| `os.system()` | Python | Shell injection |
-| `subprocess` with `shell=True` | Python | Shell injection |
-| `.innerHTML =` | JS | XSS |
-| `dangerouslySetInnerHTML` | JSX/TSX | XSS |
-| `document.write()` | JS | XSS |
-| `child_process.exec` | JS | Shell injection |
-| `pickle.loads` | Python | Deserialization attack |
-| `yaml.load` (without Loader) | Python | Unsafe deserialization |
-| `strcpy`, `strcat`, `gets` | C/C++ | Buffer overflow |
+| AWS Access Key | `aws_access_key_id`, `aws_secret_access_key` | CWE-798 |
+| API Key Assignment | `api_key`, `apikey`, `api_secret` | CWE-798 |
+| Password Assignment | `password`, `passwd`, `pwd` in assignments | CWE-798 |
+| Private Key | PEM headers (`-----BEGIN ... PRIVATE KEY-----`) | CWE-798 |
+| Generic Token | `token`, `secret`, `auth_key` assignments | CWE-798 |
+| Connection String | `mongodb+srv://`, `postgres://`, `mysql://`, `redis://` | CWE-798 |
+| GitHub Token | `ghp_`, `github_pat_` prefixes | CWE-798 |
+| Slack Token | `xoxb-`, `xoxp-`, `xoxa-`, `xoxs-` prefixes | CWE-798 |
+| Stripe Live Key | `sk_live_`, `rk_live_` prefixes | CWE-798 |
+| Google API Key | `AIza` prefix (35-char suffix) | CWE-798 |
+| JWT Token | `eyJ...eyJ` double-base64 structure | CWE-798 |
+| SendGrid Key | `SG.` prefix with known structure | CWE-798 |
+| Twilio SID | `AC` + 32 hex chars | CWE-798 |
+| npm Token | `npm_` prefix | CWE-798 |
+| GitLab Token | `glpat-` prefix | CWE-798 |
+| Hardcoded IP | IP literals in strings (excludes loopback) | CWE-200 |
 
-Severity: secrets → `"error"`, dangerous calls → `"warning"`.
+#### Dangerous Calls & Insecure Config
+
+| Pattern | Language(s) | Risk | Standard |
+|---|---|---|---|
+| `eval()` | Python, JS | Arbitrary code execution | CWE-95 |
+| `exec()` | Python | Arbitrary code execution | CWE-78 |
+| `os.system()` | Python | Shell injection | CWE-78 |
+| `subprocess` with `shell=True` | Python | Shell injection | CWE-78 |
+| `.innerHTML =` | JS | XSS | CWE-79 |
+| `dangerouslySetInnerHTML` | JSX/TSX | XSS | CWE-79 |
+| `document.write()` | JS | XSS | CWE-79 |
+| `child_process.exec` | JS | Shell injection | CWE-78 |
+| `pickle.loads` | Python | Deserialization attack | CWE-502 |
+| `yaml.load` without Loader | Python | Unsafe deserialization | CWE-502 |
+| `strcpy`, `strcat`, `gets` | C/C++ | Buffer overflow | CWE-120 |
+| `hashlib.md5`, `MD5()` | Python, JS, Java | Broken hash algorithm | CWE-327 |
+| `hashlib.sha1`, `SHA1()` | Python, JS, Java | Broken hash algorithm | CWE-328 |
+| `Math.random()`, `random.random()` | JS, Python | Insecure RNG | CWE-330 |
+| `verify=False`, `rejectUnauthorized:false` | Python, JS | TLS disabled (MITM) | CWE-295 |
+| `http://` non-localhost URL | All | Cleartext transmission | CWE-319 |
+| CORS `origin: '*'` or `true` | JS, Python | Overly permissive CORS | CWE-942 |
+| `DEBUG = True`, `app.debug = True` | Python, JS | Debug mode in production | CWE-215 |
+| `console.log(password/token/secret)` | JS | Sensitive value in logs | CWE-532 |
+
+Severity: secrets → `"error"`, dangerous calls/config → `"warning"`.
 
 ### 8c. Quality Scoring
 
