@@ -181,6 +181,8 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
     <div class="snav-dot"></div>
     <a href="#s-history">History</a>
     <div class="snav-dot"></div>
+    <a href="#s-unknown">Unknown</a>
+    <div class="snav-dot"></div>
     <a href="#s-explorer">Files</a>
   </div>
 </nav>
@@ -269,6 +271,11 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
   <div class="card animate__animated animate__fadeInUp" style="animation-delay:.30s">
     <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="var(--blue)" stroke-width="1.3"/><path d="M4.5 5.5h7M4.5 8h7M4.5 10.5h4" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Metrics by Language<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
     <div class="card-body"><div class="tw"><table id="mtbl"><thead><tr><th data-c="lang">Language</th><th data-c="files">Files</th><th data-c="loc">LOC</th><th data-c="comments">Comments</th><th data-c="blanks">Blanks</th><th data-c="functions">Functions</th><th data-c="classes">Classes</th><th data-c="ratio">Comment %</th></tr></thead><tbody id="mbody"></tbody></table></div></div>
+  </div>
+
+  <div id="s-unknown" class="card animate__animated animate__fadeInUp" style="animation-delay:.31s">
+    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--muted)" stroke-width="1.3"/><path d="M8 5.5c0-.8.7-1.5 1.5-.5s0 2-1.5 2" stroke="var(--muted)" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="11" r=".8" fill="var(--muted)"/></svg>Unrecognized Files<span id="unk-badge" class="badge bi" style="margin-left:.4rem">0</span><button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div class="card-body"><div id="unk-list"></div></div>
   </div>
 
   <div id="s-explorer" class="card animate__animated animate__fadeInUp" style="animation-delay:.32s">
@@ -602,6 +609,42 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
       loopsSec.appendChild(fileItem);
     });
   }
+})();
+
+// Unrecognized files
+(function(){
+  var unknown=R.files.filter(function(f){return f.language==='unknown';});
+  document.getElementById('unk-badge').textContent=unknown.length;
+  var el=document.getElementById('unk-list');
+  if(!unknown.length){
+    el.innerHTML='<div class="zero">'+icon_ok()+' All files recognized</div>';
+    document.getElementById('s-unknown').style.display='none';
+    return;
+  }
+  el.innerHTML='<div style="font-size:.78rem;color:var(--muted);margin-bottom:.85rem">These files have no recognized extension or filename. They are included in file counts but skipped for metrics, smell detection, and security scanning.</div>';
+  var byExt={};
+  unknown.forEach(function(f){
+    var ext=f.path.includes('.')?'.'+f.path.split('.').pop():'(no extension)';
+    if(!byExt[ext])byExt[ext]=[];
+    byExt[ext].push(f);
+  });
+  Object.keys(byExt).sort().forEach(function(ext){
+    var files=byExt[ext];
+    var id=uid();
+    var grp=document.createElement('div');grp.className='fg';
+    grp.innerHTML='<div class="fg-hdr" onclick="_tog(this)">'+icon_file()
+      +'<span class="fg-fname">'+esc(ext)+'</span>'
+      +'<span style="font-size:.72rem;color:var(--muted)">'+files.length+' file'+(files.length!==1?'s':'')+'</span>'
+      +icon_chev()+'</div><div class="fg-body"></div>';
+    var body=grp.querySelector('.fg-body');
+    files.forEach(function(f){
+      var row=document.createElement('div');
+      row.style.cssText='padding:.35rem .9rem;border-bottom:1px solid var(--border);font-family:monospace;font-size:.77rem;color:var(--dim)';
+      row.textContent=f.path;
+      body.appendChild(row);
+    });
+    el.appendChild(grp);
+  });
 })();
 
 // Metrics table
