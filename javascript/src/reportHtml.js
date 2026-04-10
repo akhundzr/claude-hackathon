@@ -283,6 +283,8 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function cu(el,n,d){var s=Date.now();(function t(){var p=Math.min((Date.now()-s)/d,1);el.textContent=Math.round(p*n);if(p<1)requestAnimationFrame(t)})()}
 function icon_ok(){return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--green)" stroke-width="1.3" fill="none"/><path d="M5 8l2.2 2.2L11 5.5" stroke="var(--green)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
 function icon_file(){return '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="var(--dim)" stroke-width="1.3"/><path d="M10 2v4h4" stroke="var(--dim)" stroke-width="1.3"/></svg>'}
+// Global toggle: avoids single-quote-in-single-quote escaping issues in template literals
+function _tog(el){el.parentElement.classList.toggle('open');}
 function icon_chev(){return '<svg class="fg-chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
 function uid(){return 'u'+Math.random().toString(36).slice(2)}
 
@@ -407,7 +409,7 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
     var html='';
     Object.keys(byFile).sort().forEach(function(fname){
       var items=byFile[fname],nm=fname.split('/').pop(),id=uid();
-      html+='<div class="fg" id="'+id+'"><div class="fg-hdr" onclick="document.getElementById(\''+id+'\').classList.toggle(\'open\')">'+icon_file()+'<span class="fg-fname" title="'+esc(fname)+'">'+esc(nm)+'<span style="color:var(--muted);font-weight:400;font-family:sans-serif;font-size:.73rem"> '+esc(fname)+'</span></span><span style="font-size:.72rem;color:var(--muted)">'+items.length+' fix'+(items.length!==1?'es':'')+'</span>'+icon_chev()+'</div><div class="fg-body">';
+      html+='<div class="fg" id="'+id+'"><div class="fg-hdr" onclick="_tog(this)">'+icon_file()+'<span class="fg-fname" title="'+esc(fname)+'">'+esc(nm)+'<span style="color:var(--muted);font-weight:400;font-family:sans-serif;font-size:.73rem"> '+esc(fname)+'</span></span><span style="font-size:.72rem;color:var(--muted)">'+items.length+' fix'+(items.length!==1?'es':'')+'</span>'+icon_chev()+'</div><div class="fg-body">';
       items.forEach(function(fix){
         html+='<div class="fi"><div class="fi-row1"><span class="badge bi">L'+fix.line+'</span><span class="fi-pat">'+esc(fix.pattern)+'</span>'+(fix.commitCategory?'<span style="font-size:.72rem;color:var(--muted);margin-left:auto">'+esc(fix.commitCategory)+'</span>':'')+'</div>';
         if(showDiff&&fix.snippet!==undefined&&fix.fixedSnippet!==undefined){
@@ -465,7 +467,7 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
       var outcomeColor={'improved':'var(--green)','failed':'var(--red)','dry_run':'var(--blue)','skipped':'var(--muted)'}[loop.finalOutcome]||'var(--muted)';
       var id=uid();
       var item=document.createElement('div');item.className='loop-item';
-      item.innerHTML='<div class="loop-hdr" onclick="document.getElementById(\''+id+'\').classList.toggle(\'open\')">'
+      item.innerHTML='<div class="loop-hdr" onclick="_tog(this)">'
         +'<span class="loop-fn" title="'+esc(loop.file||'')+'">'+esc(loop.functionName||'?')
         +'<span style="color:var(--muted);font-weight:400;font-family:sans-serif;font-size:.72rem"> in '+esc(loop.file||'')+'</span></span>'
         +'<span class="badge bi" style="margin-right:.3rem">'+esc(loop.smellType||'')+'</span>'
