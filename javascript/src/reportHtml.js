@@ -275,7 +275,24 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
     <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3h10M3 6h10M3 9h10M3 12h7" stroke="var(--dim)" stroke-width="1.3" stroke-linecap="round"/></svg>File Explorer<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
     <div class="card-body">
       <div class="ftbar"><input type="search" id="fsearch" placeholder="Filter files\u2026"></div>
-      <div class="tw"><table><thead><tr><th data-f="path">File</th><th data-f="language">Language</th><th data-f="loc">LOC</th><th data-f="comment_lines">Comments</th><th data-f="functions">Fns</th><th data-f="classes">Classes</th><th data-f="smells">Smells</th><th data-f="security_issues">Security</th></tr></thead><tbody id="fbody"></tbody></table></div>
+      <div class="tw"><table><thead><tr>
+        <th data-f="path">File</th>
+        <th data-f="language">Language</th>
+        <th data-f="loc" title="Lines of Code — non-blank, non-comment lines">LOC</th>
+        <th data-f="comment_lines" title="Lines containing only comments">Comments</th>
+        <th data-f="functions" title="Number of function definitions detected">Fns</th>
+        <th data-f="classes" title="Number of class definitions detected">Classes</th>
+        <th data-f="smells" title="Code smell findings: long functions (&gt;30 lines = warning, &gt;60 = error), deep nesting (&gt;4 levels), large parameter lists (&gt;4 params). Higher = worse.">Smells &#9432;</th>
+        <th data-f="security_issues" title="Security findings: hardcoded secrets (error), dangerous calls / insecure config (warning). Any non-zero value needs attention.">Security &#9432;</th>
+      </tr></thead><tbody id="fbody"></tbody></table></div>
+      <div style="margin-top:.6rem;font-size:.73rem;color:var(--muted);line-height:1.6">
+        <span style="font-weight:600;color:var(--dim)">Smells</span> — code quality issues:
+        <span class="badge bw" style="font-size:.68rem">warning</span> function &gt;30 lines, nesting &gt;4 levels, params &gt;4 &nbsp;
+        <span class="badge be" style="font-size:.68rem">error</span> function &gt;60 lines, nesting &gt;6, params &gt;7 &nbsp;&bull;&nbsp;
+        <span style="font-weight:600;color:var(--dim)">Security</span> — vulnerabilities:
+        <span class="badge be" style="font-size:.68rem">error</span> hardcoded secrets &nbsp;
+        <span class="badge bw" style="font-size:.68rem">warning</span> dangerous calls, insecure config, TLS bypass, debug mode
+      </div>
       <div class="pages" id="pager"></div>
     </div>
   </div>
@@ -357,9 +374,42 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
   var sc=document.getElementById('stypes');
   if(!Object.keys(types).length){sc.innerHTML='<div class="zero">'+icon_ok()+' No smells detected</div>'}
   else{Object.keys(types).forEach(function(t){var d=types[t];sc.innerHTML+='<div class="stype-row"><span class="stype-nm">'+esc(t.replace(/_/g,' '))+'</span><span style="display:flex;gap:.3rem">'+(d.e?'<span class="badge be">'+d.e+' err</span>':'')+(d.w?'<span class="badge bw">'+d.w+' warn</span>':'')+'</span></div>'})}
+
   var sl=document.getElementById('smells-list');
   if(!sm.findings.length){sl.innerHTML='<div class="zero" style="margin-top:.4rem">'+icon_ok()+' No findings</div>';return}
-  sm.findings.forEach(function(f){var el=document.createElement('div');el.className='fi';el.innerHTML='<div class="fi-row1"><span class="badge '+(f.severity==='error'?'be':'bw')+'">'+esc(f.severity)+'</span><span class="fi-pat">'+esc(f.type.replace(/_/g,' '))+'</span><span style="font-size:.76rem;color:var(--dim)">in <code>'+esc(f.function_name||'?')+'</code></span><span class="fi-line">'+esc(f.file)+':'+f.line+'</span></div><div class="fi-detail">'+esc(f.detail)+'</div>';sl.appendChild(el)});
+
+  var activeFilter='all';
+
+  function renderFindings(){
+    sl.innerHTML='';
+    var visible=sm.findings.filter(function(f){return activeFilter==='all'||f.severity===activeFilter;});
+    if(!visible.length){sl.innerHTML='<div style="padding:.4rem 0;color:var(--muted);font-size:.81rem">No '+activeFilter+' findings.</div>';return;}
+    visible.forEach(function(f){
+      var el=document.createElement('div');el.className='fi';
+      el.innerHTML='<div class="fi-row1"><span class="badge '+(f.severity==='error'?'be':'bw')+'">'+esc(f.severity)+'</span><span class="fi-pat">'+esc(f.type.replace(/_/g,' '))+'</span><span style="font-size:.76rem;color:var(--dim)">in <code>'+esc(f.function_name||'?')+'</code></span><span class="fi-line">'+esc(f.file)+':'+f.line+'</span></div><div class="fi-detail">'+esc(f.detail)+'</div>';
+      sl.appendChild(el);
+    });
+  }
+
+  // Filter buttons — inserted before the list
+  var bar=document.createElement('div');
+  bar.style.cssText='display:flex;gap:.3rem;margin-bottom:.7rem;flex-wrap:wrap';
+  var btns=[['all','All ('+sm.findings.length+')'],['error','Errors ('+sm.total_errors+')'],['warning','Warnings ('+sm.total_warnings+')']];
+  btns.forEach(function(b){
+    var btn=document.createElement('button');
+    btn.className='pbtn'+(b[0]==='all'?' on':'');
+    btn.textContent=b[1];
+    btn.dataset.f=b[0];
+    btn.addEventListener('click',function(){
+      bar.querySelectorAll('.pbtn').forEach(function(x){x.classList.remove('on');});
+      btn.classList.add('on');
+      activeFilter=b[0];
+      renderFindings();
+    });
+    bar.appendChild(btn);
+  });
+  sl.before(bar);
+  renderFindings();
 })();
 
 // Security

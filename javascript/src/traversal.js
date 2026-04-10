@@ -1,10 +1,16 @@
-import { readdirSync, lstatSync } from 'node:fs';
-import { join } from 'node:path';
-import { IGNORE_DIRS } from './constants.js';
+import { readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { loadGitignore } from './gitignore.js';
+
+// .git is always skipped — it's VCS metadata, never source code
+const ALWAYS_SKIP = new Set(['.git']);
 
 export function walk(root, { noIgnore = false } = {}) {
   const files = [];
   let skipped = 0;
+
+  // By default respect the repo's .gitignore; --no-ignore scans everything
+  const shouldIgnore = noIgnore ? () => false : loadGitignore(root);
 
   function scan(dirPath) {
     let entries;
@@ -17,12 +23,16 @@ export function walk(root, { noIgnore = false } = {}) {
     }
 
     for (const entry of entries) {
-      if (!noIgnore && IGNORE_DIRS.has(entry.name)) continue;
+      if (ALWAYS_SKIP.has(entry.name)) continue;
       if (entry.isSymbolicLink()) continue;
 
-      const fullPath = join(dirPath, entry.name);
+      const fullPath  = join(dirPath, entry.name);
+      const relPath   = relative(root, fullPath);
+      const isDir     = entry.isDirectory();
 
-      if (entry.isDirectory()) {
+      if (shouldIgnore(relPath, isDir)) continue;
+
+      if (isDir) {
         scan(fullPath);
       } else if (entry.isFile()) {
         files.push(fullPath);
