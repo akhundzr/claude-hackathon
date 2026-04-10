@@ -35,7 +35,7 @@ export async function suggestRefactoring({
     try {
       const message = await client.messages.create({
         model,
-        max_tokens: 4096,
+        max_tokens: 8192,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
       });

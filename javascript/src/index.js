@@ -5,6 +5,8 @@ import { runScan } from './scan.js';
 import { runRefactor } from './refactor.js';
 import { output as outputJson } from './reportJson.js';
 import { generate as generateHtml } from './reportHtml.js';
+import { generateFixes } from './fixer.js';
+import { loadHistory, saveHistory } from './scanHistory.js';
 
 async function main() {
   const args = parseArgs();
@@ -25,7 +27,15 @@ async function main() {
 
   outputJson(report);
 
-  const html = generateHtml(report);
+  // Load history before saving so the chart shows previous runs
+  const directory = report.scan_metadata.directory;
+  const history   = loadHistory(directory);
+  saveHistory(directory, report);
+
+  const fixes        = generateFixes(report.security.findings);
+  const feedbackLoops = [];  // populated by refactor sessions via shared state file
+
+  const html = generateHtml(report, { fixes, history, feedbackLoops });
   const outputPath = resolve(output);
   writeFileSync(outputPath, html, 'utf8');
 

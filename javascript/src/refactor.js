@@ -6,6 +6,9 @@ import { extractFunction, applyRefactoring } from './extractor.js';
 import { suggestRefactoring } from './claude.js';
 import { generateDiff } from './diff.js';
 import { detectLanguage } from './language.js';
+import { generate as generateHtml } from './reportHtml.js';
+import { generateFixes } from './fixer.js';
+import { loadHistory, saveHistory } from './scanHistory.js';
 
 const RESET  = '\x1b[0m';
 const BOLD   = '\x1b[1m';
@@ -53,6 +56,7 @@ export async function runRefactor(directory, {
 
   const targets      = rankFindings(baseReport.code_smells.findings).slice(0, top);
   const results      = [];
+  const loopEvents   = [];   // feedback loop audit trail
   let   skipAll      = false;
   let   currentScore = baselineScore;
 
@@ -92,6 +96,7 @@ export async function runRefactor(directory, {
     if (!modifiedFiles.has(absPath)) modifiedFiles.set(absPath, originalContent);
 
     let succeeded = false;
+    const loopAttempts = [];
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       if (attempt > 1) {
@@ -140,7 +145,10 @@ export async function runRefactor(directory, {
       const newReport  = runScan([directory]);
       const newScore   = newReport.quality.score;
 
-      if (newScore > functionBaseline) {
+      const improved = newScore > functionBaseline;
+      loopAttempts.push({ attempt, scoreBefore: functionBaseline, scoreAfter: newScore, applied: true, improved });
+
+      if (improved) {
         process.stdout.write(`${GREEN}✓ Quality: ${functionBaseline} → ${newScore} (+${newScore - functionBaseline})${RESET}\n`);
         currentScore = newScore;
         succeeded = true;
@@ -155,6 +163,15 @@ export async function runRefactor(directory, {
         writeFileSync(absPath, originalContent, 'utf8');
       }
     }
+
+    loopEvents.push({
+      timestamp:    new Date().toISOString(),
+      functionName: finding.function_name,
+      file:         finding.file,
+      smellType:    finding.type,
+      attempts:     loopAttempts,
+      finalOutcome: dryRun ? 'dry_run' : skipAll ? 'skipped' : succeeded ? 'improved' : 'failed',
+    });
 
     if (!succeeded) {
       results.push({ finding, before: functionBaseline, after: functionBaseline, applied: false });
@@ -194,4 +211,15 @@ export async function runRefactor(directory, {
     restoreAll();
     process.stdout.write(`${DIM}All ${modifiedFiles.size} modified file(s) restored to original.${RESET}\n\n`);
   }
+
+  // Generate HTML report including feedback loop data
+  try {
+    const history   = loadHistory(directory);
+    saveHistory(directory, finalReport);
+    const fixes     = generateFixes(finalReport.security.findings);
+    const html      = generateHtml(finalReport, { fixes, history, feedbackLoops: loopEvents });
+    const outPath   = resolve('./report.html');
+    writeFileSync(outPath, html, 'utf8');
+    process.stdout.write(`${DIM}Report written to ${outPath}${RESET}\n`);
+  } catch {}
 }
