@@ -6,7 +6,7 @@ import { runRefactor } from './refactor.js';
 import { output as outputJson } from './reportJson.js';
 import { generate as generateHtml } from './reportHtml.js';
 import { generateFixes } from './fixer.js';
-import { loadHistory, saveHistory, loadFeedbackLoops } from './scanHistory.js';
+import { loadFeedbackLoops } from './scanHistory.js';
 
 async function main() {
   const args = parseArgs();
@@ -27,15 +27,11 @@ async function main() {
 
   outputJson(report);
 
-  // Load history before saving so the chart shows previous runs
-  const directory = report.scan_metadata.directory;
-  const history   = loadHistory(directory);
-  saveHistory(directory, report);
-
-  const fixes        = generateFixes(report.security.findings);
+  const directory     = report.scan_metadata.directory;
+  const fixes         = generateFixes(report.security.findings);
   const feedbackLoops = loadFeedbackLoops(directory);
 
-  const html = generateHtml(report, { fixes, history, feedbackLoops });
+  const html = generateHtml(report, { fixes, feedbackLoops });
   const outputPath = resolve(output);
   writeFileSync(outputPath, html, 'utf8');
 

@@ -8,7 +8,7 @@ import { generateDiff } from './diff.js';
 import { detectLanguage } from './language.js';
 import { generate as generateHtml } from './reportHtml.js';
 import { generateFixes } from './fixer.js';
-import { loadHistory, saveHistory, saveFeedbackLoops } from './scanHistory.js';
+import { saveFeedbackLoops } from './scanHistory.js';
 
 const RESET  = '\x1b[0m';
 const BOLD   = '\x1b[1m';
@@ -217,10 +217,8 @@ export async function runRefactor(directory, {
 
   // Generate HTML report including feedback loop data
   try {
-    const history   = loadHistory(directory);
-    saveHistory(directory, finalReport);
-    const fixes     = generateFixes(finalReport.security.findings);
-    const html      = generateHtml(finalReport, { fixes, history, feedbackLoops: loopEvents });
+    const fixes = generateFixes(finalReport.security.findings);
+    const html  = generateHtml(finalReport, { fixes, feedbackLoops: loopEvents });
     const outPath   = resolve('./report.html');
     writeFileSync(outPath, html, 'utf8');
     process.stdout.write(`${DIM}Report written to ${outPath}${RESET}\n`);

@@ -260,16 +260,9 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
   </div>
 
   <div id="s-history" class="card animate__animated animate__fadeInUp" style="animation-delay:.28s">
-    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="var(--blue)" stroke-width="1.3"/><path d="M8 4.5V8l2.5 2" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Scan History &amp; AI Feedback Loops<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="var(--blue)" stroke-width="1.3"/><path d="M8 4.5V8l2.5 2" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>AI Feedback Loops (Path A)<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
     <div class="card-body">
-      <div class="fix-sub">
-        <div class="fix-sub-title">Scan History</div>
-        <div id="hist-section"></div>
-      </div>
-      <div class="fix-sub">
-        <div class="fix-sub-title">AI Refactoring Feedback Loops (Path A)</div>
-        <div id="loops-section"></div>
-      </div>
+      <div id="loops-section"></div>
     </div>
   </div>
 
@@ -293,7 +286,6 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
 <script>
 const R=__REPORT_JSON__;
 const FIXES=__FIXES_JSON__;
-const HIST=__HISTORY_JSON__;
 const LOOPS=__LOOPS_JSON__;
 var COLORS=['#667eea','#3fb950','#f85149','#d29922','#bc8cff','#56d364','#f0883e','#58a6ff','#e94560','#39c5cf'];
 
@@ -455,36 +447,40 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
 
   document.getElementById('auto-fix-list').innerHTML=buildGroups(af,true);
   document.getElementById('review-fix-list').innerHTML=buildGroups(rf,false);
+
+  // Projected score after applying all auto-fixes
+  if(af.length>0){
+    var fixedKeys=new Set(af.map(function(f){return f.file+'|'+f.line;}));
+    var remaining=R.security.findings.filter(function(f){return !fixedKeys.has(f.file+'|'+f.line);});
+    var remSecrets=remaining.filter(function(f){return f.type==='hardcoded_secret';}).length;
+    var remDanger=remaining.filter(function(f){return f.type==='dangerous_call';}).length;
+    var tf=R.summary.total_files;
+    var sPen=Math.min(remSecrets*20,60);
+    var den=remDanger/Math.max(tf,1);
+    var dPen=Math.round((1-Math.exp(-den*0.8))*60);
+    var newSec=Math.max(0,100-sPen-dPen);
+    var comps=R.quality.components;
+    var newQ=Math.round(comps.code_smell_score*0.30+newSec*0.25+comps.comment_score*0.20+comps.maintainability_score*0.25);
+    var curSec=comps.security_score;
+    var curQ=R.quality.score;
+    var dSec=newSec-curSec,dQ=newQ-curQ;
+    var col=function(d){return d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';};
+    var fmt=function(d){return (d>0?'+':'')+d;};
+    var proj=document.createElement('div');
+    proj.style.cssText='margin-top:1.1rem;padding:.85rem 1rem;background:var(--bg2);border-radius:8px;border:1px solid var(--border2);display:flex;gap:2rem;flex-wrap:wrap;align-items:center';
+    proj.innerHTML='<div style="font-size:.78rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-right:.5rem">Projected after auto-fixes</div>'
+      +'<div style="display:flex;gap:1.5rem;flex-wrap:wrap">'
+      +'<div style="text-align:center"><div style="font-size:1.25rem;font-weight:800;color:var(--text)">'+newSec+'<span style="font-size:.85rem;font-weight:600;color:'+col(dSec)+'"> ('+fmt(dSec)+')</span></div><div style="font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.15rem">Security Score</div></div>'
+      +'<div style="text-align:center"><div style="font-size:1.25rem;font-weight:800;color:var(--text)">'+newQ+'<span style="font-size:.85rem;font-weight:600;color:'+col(dQ)+'"> ('+fmt(dQ)+')</span></div><div style="font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:.15rem">Quality Score</div></div>'
+      +'<div style="font-size:.76rem;color:var(--muted);align-self:center">'+af.length+' auto-fix'+(af.length!==1?'es':'')+' applied &bull; '+remDanger+' dangerous call'+(remDanger!==1?'s':'')+' remaining</div>'
+      +'</div>';
+    document.getElementById('s-fixplan').querySelector('.card-body').appendChild(proj);
+  }
 })();
 
-// Scan History & Feedback Loops
+// AI Feedback Loops
 (function(){
-  var hist=HIST||[];
   var loops=LOOPS||[];
-
-  // History chart + table
-  var histSec=document.getElementById('hist-section');
-  if(!hist.length){
-    histSec.innerHTML='<div class="empty-state">No previous scans recorded. History builds up with each scan run.</div>';
-  }else{
-    var cw=document.createElement('div');cw.className='hist-chart-wrap';
-    var cv=document.createElement('canvas');cv.id='hist-chart';cw.appendChild(cv);histSec.appendChild(cw);
-    var labels=hist.map(function(h){var d=new Date(h.timestamp);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'})});
-    var scores=hist.map(function(h){return h.score});
-    new Chart(cv,{type:'line',data:{labels:labels,datasets:[{label:'Score',data:scores,borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,.1)',pointBackgroundColor:'#58a6ff',pointRadius:4,tension:.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' Score: '+ctx.parsed.y+' ('+hist[ctx.dataIndex].grade+')'}}}},scales:{y:{min:0,max:100,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b949e',font:{size:11}}},x:{grid:{display:false},ticks:{color:'#8b949e',font:{size:10},maxRotation:30}}}}});
-    var tw=document.createElement('div');tw.className='tw';tw.style.marginTop='.9rem';
-    var rows=hist.map(function(h,i){
-      var prev=i>0?hist[i-1].score:null;var delta=prev!==null?h.score-prev:null;
-      var dh=delta===null?'<span class="hist-delta-neu">\u2014</span>':delta>0?'<span class="hist-delta-pos">+'+delta+'</span>':delta<0?'<span class="hist-delta-neg">'+delta+'</span>':'<span class="hist-delta-neu">&#177;0</span>';
-      var d=new Date(h.timestamp);var ts=d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
-      var sc=h.score>=80?'var(--green)':h.score>=60?'var(--yellow)':'var(--red)';
-      return '<tr><td style="color:var(--dim);font-size:.77rem">'+esc(ts)+'</td><td><span style="font-weight:700;color:'+sc+'">'+h.score+'</span></td><td><span class="badge '+(h.score>=80?'bg':h.score>=60?'bw':'be')+'">'+esc(h.grade)+'</span></td><td>'+dh+'</td><td>'+h.totalFindings+'</td><td style="color:var(--muted);font-size:.77rem">'+(h.durationMs||'')+'ms</td></tr>';
-    }).join('');
-    tw.innerHTML='<table><thead><tr><th>Timestamp</th><th>Score</th><th>Grade</th><th>Delta</th><th>Findings</th><th>Duration</th></tr></thead><tbody>'+rows+'</tbody></table>';
-    histSec.appendChild(tw);
-  }
-
-  // AI Feedback Loops (Path A) — grouped by file
   var loopsSec=document.getElementById('loops-section');
   if(!loops.length){
     loopsSec.innerHTML='<div class="empty-state">No AI refactoring sessions recorded for this codebase.<br>Run: <code style="font-size:.8rem;background:var(--accent);padding:.1rem .35rem;border-radius:3px">node src/index.js refactor &lt;dir&gt;</code> to analyse and refactor, then re-scan to see results here.</div>';
@@ -593,11 +589,10 @@ document.getElementById('ftxt').textContent='Code Scanner \u2022 '+R.scan_metada
 </body>
 </html>`;
 
-export function generate(report, { fixes = null, history = [], feedbackLoops = [] } = {}) {
+export function generate(report, { fixes = null, feedbackLoops = [] } = {}) {
   const safe = v => JSON.stringify(v).replace(/<\//g, '<\\/');
   return HTML_TEMPLATE
     .replace('__REPORT_JSON__', safe(report))
     .replace('__FIXES_JSON__',  safe(fixes || {}))
-    .replace('__HISTORY_JSON__', safe(history))
     .replace('__LOOPS_JSON__',  safe(feedbackLoops));
 }
