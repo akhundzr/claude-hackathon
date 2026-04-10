@@ -6,7 +6,7 @@ import { runRefactor } from './refactor.js';
 import { output as outputJson } from './reportJson.js';
 import { generate as generateHtml } from './reportHtml.js';
 import { generateFixes } from './fixer.js';
-import { loadHistory, saveHistory } from './scanHistory.js';
+import { loadHistory, saveHistory, loadFeedbackLoops } from './scanHistory.js';
 
 async function main() {
   const args = parseArgs();
@@ -33,7 +33,7 @@ async function main() {
   saveHistory(directory, report);
 
   const fixes        = generateFixes(report.security.findings);
-  const feedbackLoops = [];  // populated by refactor sessions via shared state file
+  const feedbackLoops = loadFeedbackLoops(directory);
 
   const html = generateHtml(report, { fixes, history, feedbackLoops });
   const outputPath = resolve(output);

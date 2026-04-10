@@ -113,6 +113,21 @@ tr.rbw td:first-child{border-left:3px solid var(--yellow)}
 footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;border-top:1px solid var(--border);margin-top:.5rem}
 @keyframes gp{0%,100%{opacity:1}50%{opacity:.65}}
 #gg{animation:gp 2.5s ease-in-out infinite}
+/* Collapsible cards */
+.card-toggle{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--dim);padding:.1rem .3rem;border-radius:4px;transition:color .15s,background .15s;display:flex;align-items:center;flex-shrink:0}
+.card-toggle:hover{color:var(--text);background:var(--accent)}
+.card-toggle svg{transition:transform .2s}
+.card.collapsed .card-toggle svg{transform:rotate(-90deg)}
+.card.collapsed .card-body{display:none}
+.card-body{margin-top:0}
+/* Fix explanation */
+.fix-explain{margin:.35rem 0 .6rem;padding:.55rem .7rem;background:var(--bg2);border-radius:6px;border-left:3px solid var(--border2);font-size:.78rem;line-height:1.55}
+.fix-explain-row{margin-bottom:.25rem}
+.fix-explain-row:last-child{margin-bottom:0}
+.fix-explain-label{font-weight:600;color:var(--dim);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;margin-right:.3rem}
+.fix-explain-issue{color:var(--yellow)}
+.fix-explain-risk{color:var(--red)}
+.fix-explain-res{color:var(--green)}
 /* Commit preview */
 .commit-box{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:1rem 1.1rem;font-family:monospace;font-size:.8rem;margin-bottom:1.25rem;overflow-x:auto}
 .commit-msg{color:var(--green);font-weight:700;margin-bottom:.75rem;font-size:.86rem}
@@ -187,26 +202,28 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
 
   <div id="s-quality" class="grid2">
     <div class="card animate__animated animate__fadeInUp" style="animation-delay:.08s">
-      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--purple)" stroke-width="1.3"/><path d="M8 4.5v3.5l2.5 2" stroke="var(--purple)" stroke-width="1.3" stroke-linecap="round"/></svg>Quality Breakdown</div>
-      <div id="qbars"></div>
+      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--purple)" stroke-width="1.3"/><path d="M8 4.5v3.5l2.5 2" stroke="var(--purple)" stroke-width="1.3" stroke-linecap="round"/></svg>Quality Breakdown<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+      <div class="card-body"><div id="qbars"></div></div>
     </div>
     <div class="card animate__animated animate__fadeInUp" style="animation-delay:.12s">
-      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--blue)" stroke-width="1.3"/><path d="M8 4v4l3 1.5" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Language Distribution</div>
-      <div class="lc-wrap"><div class="lc-canvas"><canvas id="lc"></canvas></div><div class="lc-legend" id="lleg"></div></div>
+      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--blue)" stroke-width="1.3"/><path d="M8 4v4l3 1.5" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Language Distribution<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+      <div class="card-body"><div class="lc-wrap"><div class="lc-canvas"><canvas id="lc"></canvas></div><div class="lc-legend" id="lleg"></div></div></div>
     </div>
   </div>
 
   <div class="grid2">
     <div class="card animate__animated animate__fadeInUp" style="animation-delay:.16s">
-      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.1 4.4 12l.7-4L2.2 5.2l4-.6L8 1z" stroke="var(--yellow)" stroke-width="1.2" stroke-linejoin="round"/></svg>Top Offenders</div>
-      <div id="topoff"></div>
+      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1l1.8 3.6 4 .6-2.9 2.8.7 4L8 10.1 4.4 12l.7-4L2.2 5.2l4-.6L8 1z" stroke="var(--yellow)" stroke-width="1.2" stroke-linejoin="round"/></svg>Top Offenders<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+      <div class="card-body"><div id="topoff"></div></div>
     </div>
     <div class="card animate__animated animate__fadeInUp" style="animation-delay:.2s">
-      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="var(--teal)" stroke-width="1.3"/><path d="M1.5 6.5h13M5 10h6" stroke="var(--teal)" stroke-width="1.3" stroke-linecap="round"/></svg>Code Smells</div>
-      <div id="stypes"></div>
-      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
-        <div class="shdr" style="margin-bottom:.9rem"><span style="font-size:.8rem;font-weight:600;color:var(--dim)">ALL FINDINGS</span><div class="shdr-right"><span class="badge bw" id="sw">0</span><span class="badge be" id="se">0</span></div></div>
-        <div id="smells-list"></div>
+      <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="10" rx="1.5" stroke="var(--teal)" stroke-width="1.3"/><path d="M1.5 6.5h13M5 10h6" stroke="var(--teal)" stroke-width="1.3" stroke-linecap="round"/></svg>Code Smells<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+      <div class="card-body">
+        <div id="stypes"></div>
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+          <div class="shdr" style="margin-bottom:.9rem"><span style="font-size:.8rem;font-weight:600;color:var(--dim)">ALL FINDINGS</span><div class="shdr-right"><span class="badge bw" id="sw">0</span><span class="badge be" id="se">0</span></div></div>
+          <div id="smells-list"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -214,57 +231,60 @@ footer{text-align:center;padding:2rem 1rem;color:var(--muted);font-size:.76rem;b
   <div id="s-security" class="card animate__animated animate__fadeInUp" style="animation-delay:.24s">
     <div class="shdr">
       <div class="ctitle" style="margin-bottom:0"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="var(--red)" stroke-width="1.3"/><path d="M8 5v4.5" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".9" fill="var(--red)"/></svg>Security Findings</div>
-      <div class="shdr-right"><span class="badge be" id="sec-e">0</span><span class="badge bw" id="sec-w">0</span></div>
+      <div class="shdr-right"><span class="badge be" id="sec-e">0</span><span class="badge bw" id="sec-w">0</span><button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
     </div>
-    <div id="sec-stats" class="sec-stats"></div>
-    <div id="sec-pat-wrap" class="pat-section"><div class="pat-section-title">Pattern Distribution</div><div id="sec-pats"></div></div>
-    <div style="font-size:.75rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.7rem">Findings by File</div>
-    <div id="sec-list"></div>
+    <div class="card-body">
+      <div id="sec-stats" class="sec-stats"></div>
+      <div id="sec-pat-wrap" class="pat-section"><div class="pat-section-title">Pattern Distribution</div><div id="sec-pats"></div></div>
+      <div style="font-size:.75rem;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.7rem">Findings by File</div>
+      <div id="sec-list"></div>
+    </div>
   </div>
 
   <div id="s-fixplan" class="card animate__animated animate__fadeInUp" style="animation-delay:.26s">
-    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 8a5.5 5.5 0 1011 0 5.5 5.5 0 00-11 0z" stroke="var(--green)" stroke-width="1.3"/><path d="M5.5 8l2 2 3-3" stroke="var(--green)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Security Fix Plan</div>
-
-    <div class="fix-sub">
-      <div class="fix-sub-title"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--dim)" stroke-width="1.4"/><path d="M4 8l3 3 5-5" stroke="var(--dim)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Commit Preview</div>
-      <div id="commit-box"></div>
-    </div>
-
-    <div class="fix-sub">
-      <div class="fix-sub-title"><span class="badge bg" id="auto-fix-cnt">0</span>Auto-fixable Changes</div>
-      <div id="auto-fix-list"></div>
-    </div>
-
-    <div class="fix-sub">
-      <div class="fix-sub-title"><span class="badge by" id="review-fix-cnt">0</span>Needs Manual Review</div>
-      <div id="review-fix-list"></div>
+    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 8a5.5 5.5 0 1011 0 5.5 5.5 0 00-11 0z" stroke="var(--green)" stroke-width="1.3"/><path d="M5.5 8l2 2 3-3" stroke="var(--green)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Security Fix Plan<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div class="card-body">
+      <div class="fix-sub">
+        <div class="fix-sub-title"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--dim)" stroke-width="1.4"/><path d="M4 8l3 3 5-5" stroke="var(--dim)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>Commit Preview</div>
+        <div id="commit-box"></div>
+      </div>
+      <div class="fix-sub">
+        <div class="fix-sub-title"><span class="badge bg" id="auto-fix-cnt">0</span>Auto-fixable Changes</div>
+        <div id="auto-fix-list"></div>
+      </div>
+      <div class="fix-sub">
+        <div class="fix-sub-title"><span class="badge by" id="review-fix-cnt">0</span>Needs Manual Review</div>
+        <div id="review-fix-list"></div>
+      </div>
     </div>
   </div>
 
   <div id="s-history" class="card animate__animated animate__fadeInUp" style="animation-delay:.28s">
-    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="var(--blue)" stroke-width="1.3"/><path d="M8 4.5V8l2.5 2" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Scan History &amp; Feedback Loops</div>
-
-    <div class="fix-sub">
-      <div class="fix-sub-title">Scan History</div>
-      <div id="hist-section"></div>
-    </div>
-
-    <div class="fix-sub">
-      <div class="fix-sub-title">AI Refactoring Sessions</div>
-      <div id="loops-section"></div>
+    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13z" stroke="var(--blue)" stroke-width="1.3"/><path d="M8 4.5V8l2.5 2" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Scan History &amp; AI Feedback Loops<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div class="card-body">
+      <div class="fix-sub">
+        <div class="fix-sub-title">Scan History</div>
+        <div id="hist-section"></div>
+      </div>
+      <div class="fix-sub">
+        <div class="fix-sub-title">AI Refactoring Feedback Loops (Path A)</div>
+        <div id="loops-section"></div>
+      </div>
     </div>
   </div>
 
   <div class="card animate__animated animate__fadeInUp" style="animation-delay:.30s">
-    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="var(--blue)" stroke-width="1.3"/><path d="M4.5 5.5h7M4.5 8h7M4.5 10.5h4" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Metrics by Language</div>
-    <div class="tw"><table id="mtbl"><thead><tr><th data-c="lang">Language</th><th data-c="files">Files</th><th data-c="loc">LOC</th><th data-c="comments">Comments</th><th data-c="blanks">Blanks</th><th data-c="functions">Functions</th><th data-c="classes">Classes</th><th data-c="ratio">Comment %</th></tr></thead><tbody id="mbody"></tbody></table></div>
+    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="1.5" stroke="var(--blue)" stroke-width="1.3"/><path d="M4.5 5.5h7M4.5 8h7M4.5 10.5h4" stroke="var(--blue)" stroke-width="1.3" stroke-linecap="round"/></svg>Metrics by Language<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div class="card-body"><div class="tw"><table id="mtbl"><thead><tr><th data-c="lang">Language</th><th data-c="files">Files</th><th data-c="loc">LOC</th><th data-c="comments">Comments</th><th data-c="blanks">Blanks</th><th data-c="functions">Functions</th><th data-c="classes">Classes</th><th data-c="ratio">Comment %</th></tr></thead><tbody id="mbody"></tbody></table></div></div>
   </div>
 
   <div id="s-explorer" class="card animate__animated animate__fadeInUp" style="animation-delay:.32s">
-    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3h10M3 6h10M3 9h10M3 12h7" stroke="var(--dim)" stroke-width="1.3" stroke-linecap="round"/></svg>File Explorer</div>
-    <div class="ftbar"><input type="search" id="fsearch" placeholder="Filter files\u2026"></div>
-    <div class="tw"><table><thead><tr><th data-f="path">File</th><th data-f="language">Language</th><th data-f="loc">LOC</th><th data-f="comment_lines">Comments</th><th data-f="functions">Fns</th><th data-f="classes">Classes</th><th data-f="smells">Smells</th><th data-f="security_issues">Security</th></tr></thead><tbody id="fbody"></tbody></table></div>
-    <div class="pages" id="pager"></div>
+    <div class="ctitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3h10M3 6h10M3 9h10M3 12h7" stroke="var(--dim)" stroke-width="1.3" stroke-linecap="round"/></svg>File Explorer<button class="card-toggle" onclick="_ctog(this)" title="Collapse"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+    <div class="card-body">
+      <div class="ftbar"><input type="search" id="fsearch" placeholder="Filter files\u2026"></div>
+      <div class="tw"><table><thead><tr><th data-f="path">File</th><th data-f="language">Language</th><th data-f="loc">LOC</th><th data-f="comment_lines">Comments</th><th data-f="functions">Fns</th><th data-f="classes">Classes</th><th data-f="smells">Smells</th><th data-f="security_issues">Security</th></tr></thead><tbody id="fbody"></tbody></table></div>
+      <div class="pages" id="pager"></div>
+    </div>
   </div>
 
 </div>
@@ -283,8 +303,9 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function cu(el,n,d){var s=Date.now();(function t(){var p=Math.min((Date.now()-s)/d,1);el.textContent=Math.round(p*n);if(p<1)requestAnimationFrame(t)})()}
 function icon_ok(){return '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="var(--green)" stroke-width="1.3" fill="none"/><path d="M5 8l2.2 2.2L11 5.5" stroke="var(--green)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
 function icon_file(){return '<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="var(--dim)" stroke-width="1.3"/><path d="M10 2v4h4" stroke="var(--dim)" stroke-width="1.3"/></svg>'}
-// Global toggle: avoids single-quote-in-single-quote escaping issues in template literals
+// Global toggles
 function _tog(el){el.parentElement.classList.toggle('open');}
+function _ctog(btn){btn.closest('.card').classList.toggle('collapsed');}
 function icon_chev(){return '<svg class="fg-chev" width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 1.5l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
 function uid(){return 'u'+Math.random().toString(36).slice(2)}
 
@@ -412,6 +433,14 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
       html+='<div class="fg" id="'+id+'"><div class="fg-hdr" onclick="_tog(this)">'+icon_file()+'<span class="fg-fname" title="'+esc(fname)+'">'+esc(nm)+'<span style="color:var(--muted);font-weight:400;font-family:sans-serif;font-size:.73rem"> '+esc(fname)+'</span></span><span style="font-size:.72rem;color:var(--muted)">'+items.length+' fix'+(items.length!==1?'es':'')+'</span>'+icon_chev()+'</div><div class="fg-body">';
       items.forEach(function(fix){
         html+='<div class="fi"><div class="fi-row1"><span class="badge bi">L'+fix.line+'</span><span class="fi-pat">'+esc(fix.pattern)+'</span>'+(fix.commitCategory?'<span style="font-size:.72rem;color:var(--muted);margin-left:auto">'+esc(fix.commitCategory)+'</span>':'')+'</div>';
+        // Security explanation
+        if(fix.issue||fix.risk||fix.resolution){
+          html+='<div class="fix-explain">';
+          if(fix.issue)html+='<div class="fix-explain-row"><span class="fix-explain-label">Issue</span><span class="fix-explain-issue">'+esc(fix.issue)+'</span></div>';
+          if(fix.risk)html+='<div class="fix-explain-row"><span class="fix-explain-label">Risk</span><span class="fix-explain-risk">'+esc(fix.risk)+'</span></div>';
+          if(fix.resolution)html+='<div class="fix-explain-row"><span class="fix-explain-label">Fix</span><span class="fix-explain-res">'+esc(fix.resolution)+'</span></div>';
+          html+='</div>';
+        }
         if(showDiff&&fix.snippet!==undefined&&fix.fixedSnippet!==undefined){
           html+='<div class="diff-wrap"><span class="diff-line diff-del">- '+esc(fix.snippet)+'</span><span class="diff-line diff-add">+ '+esc(fix.fixedSnippet)+'</span></div>';
         }else if(fix.snippet){
@@ -455,78 +484,73 @@ function uid(){return 'u'+Math.random().toString(36).slice(2)}
     histSec.appendChild(tw);
   }
 
-  // Feedback loops — grouped by Lambda file
+  // AI Feedback Loops (Path A) — grouped by file
   var loopsSec=document.getElementById('loops-section');
   if(!loops.length){
-    loopsSec.innerHTML='<div class="empty-state">No refactoring sessions recorded. Run scanner refactor to populate this section.</div>';
+    loopsSec.innerHTML='<div class="empty-state">No AI refactoring sessions recorded for this codebase.<br>Run: <code style="font-size:.8rem;background:var(--accent);padding:.1rem .35rem;border-radius:3px">node src/index.js refactor &lt;dir&gt;</code> to analyse and refactor, then re-scan to see results here.</div>';
   }else{
-    // Group loops by file
+    // Group by file
     var byFile={};
-    loops.forEach(function(loop){
-      var f=loop.file||'unknown';
-      if(!byFile[f])byFile[f]=[];
-      byFile[f].push(loop);
-    });
+    loops.forEach(function(l){var f=l.file||'unknown';if(!byFile[f])byFile[f]=[];byFile[f].push(l);});
 
     Object.keys(byFile).sort().forEach(function(fname){
-      var filLoops=byFile[fname];
-      var improved=filLoops.filter(function(l){return l.finalOutcome==='improved'}).length;
-      var failed=filLoops.filter(function(l){return l.finalOutcome==='failed'}).length;
-      var skipped=filLoops.filter(function(l){return l.finalOutcome==='skipped'||l.finalOutcome==='dry_run'}).length;
-      var totalAtts=filLoops.reduce(function(s,l){return s+(l.attempts||[]).length},0);
+      var fns=byFile[fname];
+      var nImproved=fns.filter(function(l){return l.finalOutcome==='improved';}).length;
+      var nFailed=fns.filter(function(l){return l.finalOutcome==='failed';}).length;
+      var nSkipped=fns.filter(function(l){return l.finalOutcome==='skipped'||l.finalOutcome==='dry_run';}).length;
+      var totalLoops=fns.reduce(function(s,l){return s+(l.attempts||[]).length;},0);
 
-      // File-level header badges
-      var badges='';
-      if(improved)badges+='<span class="badge bg">'+improved+' improved</span> ';
-      if(failed)badges+='<span class="badge be">'+failed+' failed</span> ';
-      if(skipped)badges+='<span class="badge bi">'+skipped+' skipped</span> ';
-
+      var fileItem=document.createElement('div');fileItem.className='loop-item';
+      var badges=(nImproved?'<span class="badge bg" style="margin-right:.2rem">'+nImproved+' improved</span>':'')
+                +(nFailed?'<span class="badge be" style="margin-right:.2rem">'+nFailed+' failed</span>':'')
+                +(nSkipped?'<span class="badge bi" style="margin-right:.2rem">'+nSkipped+' skipped</span>':'');
       var nm=fname.split('/').pop();
-      var fileItem=document.createElement('div');
-      fileItem.className='loop-item';
       fileItem.innerHTML='<div class="loop-hdr" onclick="_tog(this)">'
         +icon_file()
         +'<span class="loop-fn" title="'+esc(fname)+'">'+esc(nm)
         +'<span style="color:var(--muted);font-weight:400;font-family:sans-serif;font-size:.72rem"> '+esc(fname)+'</span></span>'
         +badges
-        +'<span style="font-size:.72rem;color:var(--muted)">'+filLoops.length+' function'+(filLoops.length!==1?'s':'')+', '+totalAtts+' loop'+(totalAtts!==1?'s':'')+'</span>'
-        +icon_chev()+'</div>'
-        +'<div class="loop-body"></div>';
+        +'<span style="font-size:.72rem;color:var(--muted);white-space:nowrap">'+fns.length+' fn'+(fns.length!==1?'s':'')+' &bull; '+totalLoops+' loop'+(totalLoops!==1?'s':'')+'</span>'
+        +icon_chev()+'</div><div class="loop-body"></div>';
 
-      var fileBody=fileItem.querySelector('.loop-body');
+      var body=fileItem.querySelector('.loop-body');
+      body.style.cssText='padding:.3rem 0';
 
-      filLoops.forEach(function(loop){
+      fns.forEach(function(loop){
         var atts=loop.attempts||[];
         var outcomeColor={'improved':'var(--green)','failed':'var(--red)','dry_run':'var(--blue)','skipped':'var(--muted)'}[loop.finalOutcome]||'var(--muted)';
-        var outcomeIcon={'improved':'\u2713','failed':'\u2717','dry_run':'\u25b6','skipped':'\u2012'}[loop.finalOutcome]||'?';
-        var successfulAtts=atts.filter(function(a){return a.improved}).length;
+        var outcomeIcon={'improved':'\u2713 improved','failed':'\u2717 failed','dry_run':'\u25b6 dry run','skipped':'\u2012 skipped'}[loop.finalOutcome]||loop.finalOutcome;
 
-        var fnRow=document.createElement('div');
-        fnRow.style.cssText='padding:.5rem .9rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;font-size:.8rem';
-        fnRow.innerHTML='<span style="font-family:monospace;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(loop.functionName||'?')+'</span>'
+        var fnDiv=document.createElement('div');
+        fnDiv.style.cssText='padding:.45rem .9rem;border-bottom:1px solid var(--border)';
+
+        // Function header row
+        var hdr=document.createElement('div');
+        hdr.style.cssText='display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:.81rem;margin-bottom:'+(atts.length?'.35rem':'0');
+        hdr.innerHTML='<span style="font-family:monospace;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(loop.functionName||'')+'">'+esc(loop.functionName||'?')+'</span>'
           +'<span class="badge bi">'+esc(loop.smellType||'')+'</span>'
-          +(atts.length?'<span style="color:var(--muted);font-size:.75rem">'+atts.length+' loop'+(atts.length!==1?'s':'')+(successfulAtts?' ('+successfulAtts+' improved)':'')+'</span>':'')
-          +'<span style="font-weight:700;color:'+outcomeColor+'">'+outcomeIcon+' '+esc(loop.finalOutcome||'')+'</span>';
+          +'<span style="color:var(--muted);font-size:.74rem">'+atts.length+' loop'+(atts.length!==1?'s':'')+'</span>'
+          +'<span style="font-weight:700;font-size:.78rem;color:'+outcomeColor+'">'+outcomeIcon+'</span>';
+        fnDiv.appendChild(hdr);
 
-        // Per-attempt detail rows
-        if(atts.length){
-          atts.forEach(function(a){
-            var delta=a.scoreAfter-a.scoreBefore;
-            var dstr=delta>0?'<span style="color:var(--green)">+'+delta+'</span>':delta<0?'<span style="color:var(--red)">'+delta+'</span>':'<span style="color:var(--muted)">+0</span>';
-            var attRow=document.createElement('div');
-            attRow.className='loop-att';
-            attRow.style.paddingLeft='1.8rem';
-            attRow.innerHTML='<span style="color:var(--muted);width:60px;flex-shrink:0;font-size:.75rem">Loop '+a.attempt+'</span>'
-              +'<span style="color:var(--dim);font-size:.78rem">'+a.scoreBefore+' \u2192 '+a.scoreAfter+'</span>'
-              +'<span style="font-size:.78rem">('+dstr+')</span>'
-              +(a.improved
-                ?'<span style="color:var(--green);font-size:.75rem">\u2191 score improved</span>'
-                :'<span style="color:var(--muted);font-size:.75rem">no improvement</span>');
-            fnRow.appendChild(attRow);
-          });
-        }
+        // Per-loop attempt rows
+        atts.forEach(function(a){
+          var delta=a.scoreAfter-a.scoreBefore;
+          var dhtml=delta>0?'<span style="color:var(--green)">+'+delta+'</span>'
+                   :delta<0?'<span style="color:var(--red)">'+delta+'</span>'
+                   :'<span style="color:var(--muted)">0</span>';
+          var row=document.createElement('div');
+          row.style.cssText='display:flex;align-items:center;gap:.55rem;padding:.18rem 0 .18rem 1.2rem;font-size:.77rem;color:var(--dim)';
+          row.innerHTML='<span style="color:var(--muted);width:52px;flex-shrink:0">Loop '+a.attempt+'</span>'
+            +'<span>'+a.scoreBefore+' \u2192 '+a.scoreAfter+'</span>'
+            +'<span>('+dhtml+')</span>'
+            +(a.improved
+              ?'<span style="color:var(--green)">\u2191 score improved</span>'
+              :'<span style="color:var(--muted)">no improvement \u2014 retrying</span>');
+          fnDiv.appendChild(row);
+        });
 
-        fileBody.appendChild(fnRow);
+        body.appendChild(fnDiv);
       });
 
       loopsSec.appendChild(fileItem);

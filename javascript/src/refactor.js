@@ -8,7 +8,7 @@ import { generateDiff } from './diff.js';
 import { detectLanguage } from './language.js';
 import { generate as generateHtml } from './reportHtml.js';
 import { generateFixes } from './fixer.js';
-import { loadHistory, saveHistory } from './scanHistory.js';
+import { loadHistory, saveHistory, saveFeedbackLoops } from './scanHistory.js';
 
 const RESET  = '\x1b[0m';
 const BOLD   = '\x1b[1m';
@@ -211,6 +211,9 @@ export async function runRefactor(directory, {
     restoreAll();
     process.stdout.write(`${DIM}All ${modifiedFiles.size} modified file(s) restored to original.${RESET}\n\n`);
   }
+
+  // Persist feedback loop events so the next scan report picks them up
+  saveFeedbackLoops(directory, loopEvents);
 
   // Generate HTML report including feedback loop data
   try {
