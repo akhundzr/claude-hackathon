@@ -16,7 +16,7 @@ export const EXTENSION_MAP = {
   '.scss': 'SCSS/Sass', '.sass': 'SCSS/Sass', '.sql': 'SQL',
   '.json': 'JSON', '.xml': 'XML', '.yaml': 'YAML', '.yml': 'YAML',
   '.toml': 'TOML', '.md': 'Markdown', '.markdown': 'Markdown',
-  '.txt': 'Text', '.dockerfile': 'Dockerfile', '.tf': 'Terraform',
+  '.txt': 'Text', '.dockerfile': 'Dockerfile', '.tf': 'Terraform', '.tfvars': 'Terraform', '.tfstate': 'Terraform',
 };
 
 export const SMELL_THRESHOLDS = {
